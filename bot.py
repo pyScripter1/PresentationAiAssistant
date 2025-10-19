@@ -93,7 +93,7 @@ class PresentationBot:
         confirmation_text += "\nСоздаем презентацию?"
 
         keyboard = [['✅ Да', '❌ Нет']]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
 
         await update.message.reply_text(confirmation_text, reply_markup=reply_markup)
         return CONFIRM
