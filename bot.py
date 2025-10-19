@@ -9,241 +9,171 @@ from presentation_generator import PresentationGenerator
 from config import Config
 
 # Настройка логирования
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Состояния разговора
-TOPIC, SLIDES_COUNT = range(2)
+# Состояния для ConversationHandler
+TOPIC, SLIDES, ADDITIONAL, CONFIRM = range(4)
 
 
 class PresentationBot:
     def __init__(self):
-        self.application = Application.builder().token(Config.BOT_TOKEN).build()
-        self.generator = PresentationGenerator(Config.MISTRAL_API_KEY)
-        self.setup_handlers()
+        self.generator = PresentationGenerator()
+        self.user_data = {}
 
-    def setup_handlers(self):
-        """Настройка обработчиков команд"""
-
-        conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', self.start)],
-            states={
-                TOPIC: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_topic)],
-                SLIDES_COUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.get_slides_count)],
-            },
-            fallbacks=[CommandHandler('cancel', self.cancel)],
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text(
+            "👋 Привет! Я бот для генерации презентаций.\n"
+            "Я помогу создать презентацию на любую тему.\n\n"
+            "Для начала введите команду /generate"
         )
 
-        self.application.add_handler(conv_handler)
-        self.application.add_handler(CommandHandler("help", self.help_command))
-        self.application.add_handler(CommandHandler("demo", self.demo_command))
-        self.application.add_handler(CommandHandler("status", self.status_command))
-
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Начало создания презентации"""
-        user = update.message.from_user
-        logger.info(f"Пользователь {user.first_name} начал создание презентации")
-
+    async def generate(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
-            "🎉 Добро пожаловать в Presentation AI Assistant с Mistral AI!\n\n"
-            "Я помогу вам создать профессиональную презентацию.\n"
-            "📝 Пожалуйста, введите тему презентации:",
+            "🎯 Введите тему для презентации:",
             reply_markup=ReplyKeyboardRemove()
         )
-
         return TOPIC
 
-    async def get_topic(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Получение темы презентации"""
+    async def get_topic(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         topic = update.message.text
         context.user_data['topic'] = topic
 
-        # Быстрые варианты количества слайдов
-        quick_options = [['5', '8', '10'], ['12', '15']]
+        await update.message.reply_text(
+            f"📊 Тема: {topic}\n"
+            f"Сколько слайдов должно быть в презентации? (по умолчанию {Config.DEFAULT_SLIDES}):"
+        )
+        return SLIDES
+
+    async def get_slides(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        try:
+            num_slides = int(update.message.text)
+            if num_slides > Config.MAX_SLIDES:
+                await update.message.reply_text(
+                    f"⚠️ Максимальное количество слайдов: {Config.MAX_SLIDES}. "
+                    f"Установлено значение {Config.MAX_SLIDES}."
+                )
+                num_slides = Config.MAX_SLIDES
+        except ValueError:
+            num_slides = Config.DEFAULT_SLIDES
+            await update.message.reply_text(
+                f"⚠️ Установлено значение по умолчанию: {num_slides} слайдов"
+            )
+
+        context.user_data['num_slides'] = num_slides
 
         await update.message.reply_text(
-            f"📋 Тема: {topic}\n\n"
-            f"📊 Сколько слайдов вам нужно? (максимум {Config.MAX_SLIDES})\n"
-            f"Или нажмите /default для {Config.DEFAULT_SLIDES} слайдов",
-            reply_markup=ReplyKeyboardMarkup(quick_options, one_time_keyboard=True)
+            "💡 Есть ли дополнительные пожелания к презентации?\n"
+            "(например: 'больше примеров', 'акцент на данных', 'минимум текста')\n\n"
+            "Или напишите 'нет', если дополнений нет:"
         )
+        return ADDITIONAL
 
-        return SLIDES_COUNT
+    async def get_additional(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        additional = update.message.text
+        if additional.lower() in ['нет', 'no', '']:
+            additional = ""
 
-    async def get_slides_count(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Получение количества слайдов и генерация презентации"""
-        user_input = update.message.text
+        context.user_data['additional'] = additional
+
+        # Подтверждение
         topic = context.user_data['topic']
+        num_slides = context.user_data['num_slides']
+        additional_text = context.user_data['additional']
 
-        try:
-            if user_input == '/default':
-                slides_count = Config.DEFAULT_SLIDES
-            else:
-                slides_count = int(user_input)
-                if slides_count > Config.MAX_SLIDES:
-                    await update.message.reply_text(
-                        f"❌ Максимальное количество слайдов: {Config.MAX_SLIDES}\n"
-                        f"Пожалуйста, введите число до {Config.MAX_SLIDES}:"
-                    )
-                    return SLIDES_COUNT
-                if slides_count < 1:
-                    await update.message.reply_text("❌ Количество слайдов должно быть больше 0")
-                    return SLIDES_COUNT
-
-        except ValueError:
-            await update.message.reply_text("❌ Пожалуйста, введите корректное число:")
-            return SLIDES_COUNT
-
-        # Уведомление о начале генерации
-        generating_msg = await update.message.reply_text(
-            f"🔄 Генерирую презентацию '{topic}'...\n"
-            f"📊 Слайдов: {slides_count}\n"
-            f"⏳ Это займет 10-30 секунд..."
+        confirmation_text = (
+            f"✅ Подтвердите создание презентации:\n\n"
+            f"🎯 Тема: {topic}\n"
+            f"📊 Слайдов: {num_slides}\n"
         )
 
-        try:
-            # Генерация презентации
-            filename = f"presentation_{update.message.chat_id}.pptx"
-            await self.generator.create_presentation(topic, slides_count, filename)
+        if additional_text:
+            confirmation_text += f"💡 Дополнения: {additional_text}\n"
 
-            # Отправка файла
-            with open(filename, 'rb') as file:
-                await update.message.reply_document(
-                    document=file,
-                    filename=f"Презентация_{topic.replace(' ', '_')}.pptx",
-                    caption=f"✅ Ваша презентация готова!\n\n"
-                            f"📖 Тема: {topic}\n"
-                            f"📊 Слайдов: {slides_count}\n"
-                            f"🤖 Сгенерировано с помощью {Config.MODEL_NAME}\n\n"
-                            f"Для создания новой презентации используйте /start"
-                )
+        confirmation_text += "\nСоздаем презентацию?"
 
-            # Удаление временного файла
-            os.remove(filename)
+        keyboard = [['✅ Да', '❌ Нет']]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
 
-        except Exception as e:
-            logger.error(f"Ошибка генерации: {str(e)}")
+        await update.message.reply_text(confirmation_text, reply_markup=reply_markup)
+        return CONFIRM
 
-            # Попытка создать простую презентацию как запасной вариант
+    async def confirm_generation(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_choice = update.message.text
+
+        if user_choice == '✅ Да':
+            await update.message.reply_text(
+                "🔄 Генерирую презентацию... Это может занять несколько минут.",
+                reply_markup=ReplyKeyboardRemove()
+            )
+
             try:
-                await update.message.reply_text("🔄 Пробую альтернативный метод генерации...")
-                filename = f"presentation_simple_{update.message.chat_id}.pptx"
-                await self.generator.create_simple_presentation(topic, slides_count, filename)
+                # Генерация презентации
+                topic = context.user_data['topic']
+                num_slides = context.user_data['num_slides']
+                additional = context.user_data['additional']
 
-                with open(filename, 'rb') as file:
-                    await update.message.reply_document(
-                        document=file,
-                        filename=f"Презентация_{topic.replace(' ', '_')}_simple.pptx",
-                        caption=f"✅ Презентация создана (упрощенный вариант)!\n\n"
-                                f"📖 Тема: {topic}\n"
-                                f"📊 Слайдов: {slides_count}\n\n"
-                                f"Для новой попытки используйте /start"
-                    )
+                file_path = self.generator.generate_presentation(topic, num_slides, additional)
 
-                os.remove(filename)
+                if file_path and os.path.exists(file_path):
+                    # Отправка файла пользователю
+                    with open(file_path, 'rb') as file:
+                        await update.message.reply_document(
+                            document=file,
+                            filename=os.path.basename(file_path),
+                            caption="🎉 Ваша презентация готова!"
+                        )
+                    # Удаляем временный файл
+                    os.remove(file_path)
+                else:
+                    await update.message.reply_text("❌ Произошла ошибка при генерации презентации.")
 
-            except Exception as e2:
-                await update.message.reply_text(
-                    "❌ Произошла ошибка при генерации презентации. "
-                    "Пожалуйста, попробуйте позже или измените параметры.\n"
-                    f"Ошибка: {str(e2)}"
-                )
+            except Exception as e:
+                logger.error(f"Error generating presentation: {e}")
+                await update.message.reply_text("❌ Произошла ошибка. Попробуйте позже.")
 
-        # Удаление сообщения о генерации
-        try:
-            await generating_msg.delete()
-        except:
-            pass
+        else:
+            await update.message.reply_text(
+                "Создание презентации отменено. Для начала заново введите /generate",
+                reply_markup=ReplyKeyboardRemove()
+            )
 
         return ConversationHandler.END
 
-    async def demo_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Демонстрационная команда"""
+    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
-            "🎯 Демо-режим: создаю презентацию на тему 'Искусственный интеллект в бизнесе'..."
-        )
-
-        filename = f"demo_{update.message.chat_id}.pptx"
-        try:
-            await self.generator.create_presentation(
-                "Искусственный интеллект в бизнесе", 6, filename
-            )
-
-            with open(filename, 'rb') as file:
-                await update.message.reply_document(
-                    document=file,
-                    filename="Демо_презентация_ИИ_в_бизнесе.pptx",
-                    caption="✅ Демо-презентация готова!\n\n"
-                            "Попробуйте создать свою с помощью /start"
-                )
-
-            os.remove(filename)
-
-        except Exception as e:
-            await update.message.reply_text(f"❌ Ошибка демо-генерации: {str(e)}")
-
-    async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Проверка статуса бота"""
-        status_text = (
-            "🤖 **Статус бота**\n\n"
-            f"✅ Бот активен\n"
-            f"🧠 Модель: {Config.MODEL_NAME}\n"
-            f"📊 Макс. слайдов: {Config.MAX_SLIDES}\n"
-            f"⚡ API ключ: {'✅ Настроен' if Config.MISTRAL_API_KEY else '❌ Отсутствует'}\n\n"
-            "Используйте /start для создания презентации"
-        )
-        await update.message.reply_text(status_text)
-
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Справка по боту"""
-        help_text = f"""
-        🤖 Presentation AI Assistant ({Config.MODEL_NAME})
-
-        Команды:
-        /start - Начать создание новой презентации
-        /demo - Получить демо-презентацию
-        /status - Проверить статус бота
-        /help - Показать эту справку
-
-        Как использовать:
-        1. Нажмите /start
-        2. Введите тему презентации
-        3. Укажите количество слайдов (1-{Config.MAX_SLIDES})
-        4. Получите готовую презентацию!
-
-        Особенности:
-        • Генерация интеллектуального контента через Mistral AI
-        • Профессиональное оформление слайдов
-        • Автоматическая структуризация
-        • Резервные методы генерации
-
-        Примеры тем:
-        • Цифровая трансформация бизнеса
-        • Маркетинговая стратегия на 2024
-        • Внедрение новых технологий
-        • Образовательные программы
-        """
-        await update.message.reply_text(help_text)
-
-    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Отмена создания презентации"""
-        await update.message.reply_text(
-            '❌ Создание презентации отменено.',
+            "Операция отменена.",
             reply_markup=ReplyKeyboardRemove()
         )
         return ConversationHandler.END
 
-    def run(self):
-        """Запуск бота"""
-        print("🤖 Бот запущен с Mistral AI!")
-        print(f"📊 Максимум слайдов: {Config.MAX_SLIDES}")
-        print(f"🧠 Модель: {Config.MODEL_NAME}")
-        self.application.run_polling()
+
+def main():
+    # Создаем папку для презентаций
+    os.makedirs(Config.PRESENTATIONS_DIR, exist_ok=True)
+
+    bot = PresentationBot()
+    application = Application.builder().token(Config.TELEGRAM_BOT_TOKEN).build()
+
+    # Conversation handler для генерации презентаций
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('generate', bot.generate)],
+        states={
+            TOPIC: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_topic)],
+            SLIDES: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_slides)],
+            ADDITIONAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_additional)],
+            CONFIRM: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.confirm_generation)],
+        },
+        fallbacks=[CommandHandler('cancel', bot.cancel)]
+    )
+
+    application.add_handler(CommandHandler("start", bot.start))
+    application.add_handler(conv_handler)
+
+    # Запуск бота
+    print("Бот запущен...")
+    application.run_polling()
 
 
 if __name__ == '__main__':
-    bot = PresentationBot()
-    bot.run()
+    main()
