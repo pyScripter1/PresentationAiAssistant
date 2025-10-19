@@ -1,229 +1,308 @@
-from mistralai import Mistral
+import requests
+import json
+import os
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
-import asyncio
-import aiofiles
-import os
-import json
-from typing import List, Dict
+from datetime import datetime
 from config import Config
 
 
 class PresentationGenerator:
-    def __init__(self, api_key: str):
-        if not api_key:
-            raise ValueError("Mistral API ключ не предоставлен")
+    def __init__(self):
+        self.api_key = Config.MISTRAL_API_KEY
+        self.presentations_dir = Config.PRESENTATIONS_DIR
 
-        self.client = Mistral(api_key=api_key)
-        self.template_path = "templates/template.pptx"
-        self.model_name = Config.MODEL_NAME
+        # Создаем папку для презентаций, если она не существует
+        os.makedirs(self.presentations_dir, exist_ok=True)
 
-    async def generate_content(self, topic: str, slides_count: int) -> List[Dict]:
-        """Генерация контента для презентации через Mistral AI"""
-
-        prompt = f"""
-        Ты эксперт по созданию презентаций. Создай структуру презентации на тему "{topic}" из {slides_count} слайдов.
-
-        Требования:
-        - Первый слайд - титульный
-        - Последний слайд - заключительный с выводами
-        - Остальные слайды - содержательные
-        - Каждый слайд должен иметь четкую структуру
-        - Используй маркированные списки по 3-5 пунктов
-
-        Верни ответ ТОЛЬКО в формате JSON без каких-либо дополнительных текстов:
-        {{
-            "slides": [
-                {{
-                    "title": "Заголовок слайда",
-                    "content": ["Пункт 1", "Пункт 2", "Пункт 3"],
-                    "slide_type": "title|content|summary"
-                }}
-            ]
-        }}
-
-        slide_type может быть: "title" (титульный), "content" (основной контент), "summary" (заключительный)
+    def query_mistral_api(self, prompt, model="mistral-small-latest"):
         """
+        Отправляет запрос к Mistral AI API и возвращает ответ.
+        """
+        url = "https://api.mistral.ai/v1/chat/completions"
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7
+        }
 
         try:
-            response = self.client.chat.complete(
-                model=self.model_name,
-                messages=[
-                    {"role": "system",
-                     "content": "Ты профессиональный создатель презентаций. Создавай четкие, структурированные и информативные слайды."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
-            )
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+            response.raise_for_status()
+            response_data = response.json()
+            return response_data["choices"][0]["message"]["content"]
 
-            content = response.choices[0].message.content
-            return self._parse_content(content)
+        except requests.exceptions.RequestException as e:
+            print(f"Ошибка при запросе к API: {e}")
+            return None
+        except KeyError as e:
+            print(f"Неожиданный формат ответа от API: {e}")
+            return None
 
-        except Exception as e:
-            print(f"Ошибка Mistral API: {str(e)}")
-            # Fallback: создаем базовую структуру
-            return self._create_fallback_content(topic, slides_count)
+    def create_presentation_prompt(self, topic, num_slides=5, additional_prompt=""):
+        """
+        Создает промпт для генерации презентации с учетом дополнительных пожеланий.
+        """
+        prompt = f"""
+Ты — опытный спикер и копирайтер. Твоя задача — создать подробную структуру и контент для презентации на тему "{topic}".
 
-    def _parse_content(self, content: str) -> List[Dict]:
-        """Парсинг сгенерированного контента"""
+Презентация должна состоять из {num_slides} слайдов.
+"""
+
+        # Добавляем дополнительные пожелания, если они есть
+        if additional_prompt:
+            prompt += f"\n\nДОПОЛНИТЕЛЬНЫЕ ПОЖЕЛАНИЯ:\n{additional_prompt}\n"
+
+        prompt += f"""
+
+Верни ответ в формате JSON, который легко распарсить. Структура JSON должна быть следующей:
+
+{{
+  "presentation_title": "Название презентации",
+  "slides": [
+    {{
+      "slide_number": 1,
+      "slide_type": "title",
+      "slide_title": "Заголовок презентации",
+      "content": [
+        "Подзаголовок или дополнительная информация",
+        "Автор или организация"
+      ]
+    }},
+    {{
+      "slide_number": 2,
+      "slide_type": "content",
+      "slide_title": "Введение",
+      "content": [
+        "Ключевой тезис 1",
+        "Ключевой тезис 2",
+        "Ключевой тезис 3"
+      ]
+    }},
+    {{
+      "slide_number": 3,
+      "slide_type": "content",
+      "slide_title": "Основная часть",
+      "content": [
+        "Основной пункт 1",
+        "Основной пункт 2",
+        "Основной пункт 3"
+      ]
+    }},
+    {{
+      "slide_number": 4,
+      "slide_type": "content",
+      "slide_title": "Детали",
+      "content": [
+        "Деталь 1",
+        "Деталь 2",
+        "Деталь 3"
+      ]
+    }},
+    {{
+      "slide_number": 5,
+      "slide_type": "conclusion",
+      "slide_title": "Выводы",
+      "content": [
+        "Ключевой вывод 1",
+        "Ключевой вывод 2",
+        "Призыв к действию"
+      ]
+    }}
+  ]
+}}
+
+Используй четкие, лаконичные формулировки для пунктов списка.
+Содержание должно быть информативным и структурированным.
+
+Тема презентации: {topic}
+"""
+        return prompt
+
+    def create_pptx_from_data(self, presentation_data, output_filename):
+        """
+        Создает PowerPoint файл из данных презентации.
+        """
         try:
-            data = json.loads(content)
-            slides = data.get("slides", [])
-
-            # Валидация структуры
-            for slide in slides:
-                if not all(key in slide for key in ['title', 'content', 'slide_type']):
-                    raise ValueError("Неверная структура слайда")
-
-            return slides
-
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Ошибка парсинга JSON: {e}")
-            raise Exception("Ошибка обработки ответа от AI")
-
-    def _create_fallback_content(self, topic: str, slides_count: int) -> List[Dict]:
-        """Создание резервного контента при ошибке API"""
-        slides = []
-
-        # Титульный слайд
-        slides.append({
-            "title": topic,
-            "content": ["Презентация создана автоматически", f"Количество слайдов: {slides_count}"],
-            "slide_type": "title"
-        })
-
-        # Содержательные слайды
-        for i in range(1, slides_count - 1):
-            slides.append({
-                "title": f"Аспект {i} темы '{topic}'",
-                "content": [
-                    f"Ключевой момент {i}.1",
-                    f"Ключевой момент {i}.2",
-                    f"Ключевой момент {i}.3",
-                    "Дополнительная информация"
-                ],
-                "slide_type": "content"
-            })
-
-        # Заключительный слайд
-        if slides_count > 1:
-            slides.append({
-                "title": "Заключение",
-                "content": [
-                    "Основные выводы",
-                    "Рекомендации",
-                    "Благодарность за внимание"
-                ],
-                "slide_type": "summary"
-            })
-
-        return slides
-
-    async def create_presentation(self, topic: str, slides_count: int, filename: str) -> str:
-        """Создание PowerPoint презентации"""
-
-        # Генерация контента
-        slides_content = await self.generate_content(topic, slides_count)
-
-        # Ограничение количества слайдов по фактическому контенту
-        actual_slides_count = min(len(slides_content), slides_count)
-        slides_content = slides_content[:actual_slides_count]
-
-        # Создание презентации
-        if os.path.exists(self.template_path):
-            prs = Presentation(self.template_path)
-            # Очистка шаблонных слайдов
-            for i in range(len(prs.slides) - 1, -1, -1):
-                rId = prs.slides._sldIdLst[i].rId
-                prs.part.related_parts[rId].drop_tree()
-            prs.slides._sldIdLst.clear()
-        else:
             prs = Presentation()
 
-        # Создание слайдов
-        for i, slide_data in enumerate(slides_content):
-            if i == 0:
-                # Титульный слайд
-                slide_layout = prs.slide_layouts[0]
-            else:
-                # Контентные слайды
-                slide_layout = prs.slide_layouts[1]
+            # Настройки презентации
+            prs.slide_width = Inches(13.333)  # 16:9 формат
+            prs.slide_height = Inches(7.5)
 
-            slide = prs.slides.add_slide(slide_layout)
+            title_slide_layout = prs.slide_layouts[0]
+            content_slide_layout = prs.slide_layouts[1]
 
-            # Заголовок
-            title = slide.shapes.title
-            if title:
-                title.text = slide_data["title"]
-                self._format_title(title)
+            for slide_info in presentation_data["slides"]:
+                slide_type = slide_info.get("slide_type", "content")
+                slide_title = slide_info["slide_title"]
+                content = slide_info["content"]
 
-            # Контент для нетитальных слайдов
-            if slide_data["slide_type"] != "title" and len(slide.placeholders) > 1:
-                content_shape = slide.placeholders[1]
-                if content_shape.has_text_frame:
+                if slide_type == "title":
+                    slide = prs.slides.add_slide(title_slide_layout)
+
+                    title_shape = slide.shapes.title
+                    subtitle_shape = slide.placeholders[1]
+
+                    title_shape.text = slide_title
+                    title_shape.text_frame.paragraphs[0].font.size = Pt(44)
+                    title_shape.text_frame.paragraphs[0].font.bold = True
+
+                    if content:
+                        subtitle_shape.text = "\n".join(content)
+                        subtitle_shape.text_frame.paragraphs[0].font.size = Pt(24)
+                        subtitle_shape.text_frame.paragraphs[0].font.color.rgb = RGBColor(100, 100, 100)
+
+                else:
+                    slide = prs.slides.add_slide(content_slide_layout)
+
+                    title_shape = slide.shapes.title
+                    content_shape = slide.placeholders[1]
+
+                    title_shape.text = slide_title
+                    title_shape.text_frame.paragraphs[0].font.size = Pt(32)
+                    title_shape.text_frame.paragraphs[0].font.bold = True
+
                     text_frame = content_shape.text_frame
                     text_frame.clear()
                     text_frame.word_wrap = True
 
-                    for j, point in enumerate(slide_data["content"]):
-                        if j == 0:
+                    for i, point in enumerate(content):
+                        if i == 0:
                             p = text_frame.paragraphs[0]
                         else:
                             p = text_frame.add_paragraph()
 
                         p.text = f"• {point}"
-                        p.level = 0
-                        p.font.size = Pt(20)
-                        p.font.name = "Arial"
+                        p.font.size = Pt(18)
                         p.font.color.rgb = RGBColor(0, 0, 0)
                         p.space_after = Pt(12)
 
-        # Сохранение
-        prs.save(filename)
-        return filename
+            prs.save(output_filename)
+            return output_filename
 
-    def _format_title(self, title):
-        """Форматирование заголовка"""
-        title.text_frame.paragraphs[0].font.size = Pt(32)
-        title.text_frame.paragraphs[0].font.bold = True
-        title.text_frame.paragraphs[0].font.color.rgb = RGBColor(0, 0, 139)  # Темно-синий
-        title.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-        title.text_frame.vertical_anchor = 1  # Middle
+        except Exception as e:
+            print(f"Ошибка при создании PPTX файла: {e}")
+            return None
 
-    async def create_simple_presentation(self, topic: str, slides_count: int, filename: str) -> str:
-        """Альтернативный метод создания презентации"""
-        prs = Presentation()
+    def clean_json_response(self, response_text):
+        """
+        Очищает ответ от модели от лишних символов и извлекает JSON.
+        """
+        try:
+            cleaned_response = response_text.strip()
 
-        # Титульный слайд
-        title_slide_layout = prs.slide_layouts[0]
-        slide = prs.slides.add_slide(title_slide_layout)
-        title = slide.shapes.title
-        subtitle = slide.placeholders[1]
+            if cleaned_response.startswith("```json"):
+                cleaned_response = cleaned_response[7:]
+            elif cleaned_response.startswith("```"):
+                cleaned_response = cleaned_response[3:]
 
-        title.text = topic
-        subtitle.text = f"Автоматически сгенерированная презентация\n{slides_count} слайдов"
+            if cleaned_response.endswith("```"):
+                cleaned_response = cleaned_response[:-3]
 
-        # Контентные слайды
-        for i in range(1, slides_count):
-            content_slide_layout = prs.slide_layouts[1]
-            slide = prs.slides.add_slide(content_slide_layout)
+            presentation_data = json.loads(cleaned_response)
+            return presentation_data
 
-            title = slide.shapes.title
-            content = slide.placeholders[1]
+        except json.JSONDecodeError as e:
+            print(f"Ошибка парсинга JSON: {e}")
+            print(f"Исходный текст: {response_text}")
+            return None
 
-            title.text = f"{topic} - Часть {i}"
+    def generate_presentation(self, topic, num_slides=5, additional_prompt=""):
+        """
+        Основной метод для генерации презентации.
+        Возвращает путь к созданному файлу или None в случае ошибки.
+        """
+        # Генерируем имя файла
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_topic = "".join(c if c.isalnum() else "_" for c in topic)
+        output_filename = os.path.join(
+            self.presentations_dir,
+            f"presentation_{safe_topic}_{timestamp}.pptx"
+        )
 
-            if content.has_text_frame:
-                tf = content.text_frame
-                tf.text = f"Ключевые аспекты части {i}:"
-                p = tf.add_paragraph()
-                p.text = "• Важный момент 1"
-                p = tf.add_paragraph()
-                p.text = "• Важный момент 2"
-                p = tf.add_paragraph()
-                p.text = "• Важный момент 3"
+        print(f"🔄 Генерирую презентацию '{topic}'...")
 
-        prs.save(filename)
-        return filename
+        # Создаем промпт и получаем ответ от Mistral AI
+        prompt = self.create_presentation_prompt(topic, num_slides, additional_prompt)
+        response_text = self.query_mistral_api(prompt)
+
+        if not response_text:
+            print("❌ Не удалось получить ответ от Mistral AI")
+            return None
+
+        print("✅ Получен ответ от ИИ. Создаю файл...")
+
+        presentation_data = self.clean_json_response(response_text)
+
+        if not presentation_data:
+            print("❌ Не удалось обработать ответ от ИИ")
+            return None
+
+        result_file = self.create_pptx_from_data(presentation_data, output_filename)
+
+        if result_file:
+            print(f"🎉 Презентация успешно создана: {result_file}")
+            return result_file
+        else:
+            print("❌ Ошибка при создании PPTX файла")
+            return None
+
+    def get_presentation_info(self, presentation_data):
+        """
+        Возвращает информацию о презентации для отправки пользователю.
+        """
+        if not presentation_data:
+            return None
+
+        info = {
+            'title': presentation_data.get('presentation_title', 'Без названия'),
+            'slides_count': len(presentation_data.get('slides', [])),
+            'structure': []
+        }
+
+        for slide in presentation_data.get('slides', []):
+            info['structure'].append({
+                'number': slide.get('slide_number'),
+                'title': slide.get('slide_title'),
+                'type': slide.get('slide_type', 'content')
+            })
+
+        return info
+
+
+# Функция для обратной совместимости (если нужно)
+def generate_presentation(topic, num_slides=5, additional_prompt=""):
+    """
+    Упрощенная функция для генерации презентации.
+    """
+    generator = PresentationGenerator()
+    return generator.generate_presentation(topic, num_slides, additional_prompt)
+
+
+if __name__ == "__main__":
+    # Тестовый запуск
+    generator = PresentationGenerator()
+
+    print("=== Тест генератора презентаций ===")
+    topic = input("Введите тему для теста: ").strip()
+
+    result = generator.generate_presentation(
+        topic=topic,
+        num_slides=3,
+        additional_prompt="сделать кратко и по делу"
+    )
+
+    if result:
+        print(f"Тест успешен! Файл создан: {result}")
+    else:
+        print("Тест не удался.")
