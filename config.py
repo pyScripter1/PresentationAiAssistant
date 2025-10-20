@@ -13,4 +13,4 @@ class Config:
 
     # Настройки бота
     MAX_SLIDES = 25
-    DEFAULT_SLIDES = 5
+    DEFAULT_SLIDES = 8  # Оптимально для образовательного шаблона
