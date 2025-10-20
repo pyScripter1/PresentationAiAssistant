@@ -12,14 +12,39 @@ class PresentationGenerator:
     def __init__(self):
         self.api_key = Config.MISTRAL_API_KEY
         self.presentations_dir = Config.PRESENTATIONS_DIR
+        self.templates_dir = "templates"
 
-        # Создаем папку для презентаций, если она не существует
+        # Создаем папки, если они не существуют
         os.makedirs(self.presentations_dir, exist_ok=True)
+        os.makedirs(self.templates_dir, exist_ok=True)
+
+        # Загружаем доступные шаблоны
+        self.available_templates = self._load_available_templates()
+
+    def _load_available_templates(self):
+        """Загружает список доступных шаблонов"""
+        templates = {}
+        if os.path.exists(self.templates_dir):
+            for file in os.listdir(self.templates_dir):
+                if file.endswith('.json'):
+                    template_name = file.replace('.json', '')
+                    try:
+                        with open(os.path.join(self.templates_dir, file), 'r', encoding='utf-8') as f:
+                            templates[template_name] = json.load(f)
+                    except Exception as e:
+                        print(f"Ошибка загрузки шаблона {file}: {e}")
+        return templates
+
+    def get_available_templates(self):
+        """Возвращает список доступных шаблонов"""
+        return list(self.available_templates.keys())
+
+    def load_template(self, template_name):
+        """Загружает конкретный шаблон"""
+        return self.available_templates.get(template_name)
 
     def query_mistral_api(self, prompt, model="mistral-small-latest"):
-        """
-        Отправляет запрос к Mistral AI API и возвращает ответ.
-        """
+        """Отправляет запрос к Mistral AI API и возвращает ответ."""
         url = "https://api.mistral.ai/v1/chat/completions"
 
         headers = {
@@ -48,113 +73,67 @@ class PresentationGenerator:
             print(f"Неожиданный формат ответа от API: {e}")
             return None
 
-    def create_presentation_prompt(self, topic, num_slides=5, additional_prompt=""):
-        """
-        Создает промпт для генерации презентации с учетом дополнительных пожеланий.
-        """
-        prompt = f"""
-Ты — опытный спикер и копирайтер. Твоя задача — создать подробную структуру и контент для презентации на тему "{topic}".
+    def create_presentation_prompt(self, topic, template_name="educational", additional_prompt=""):
+        """Создает промпт для генерации презентации по шаблону."""
 
-Презентация должна состоять из {num_slides} слайдов.
+        template = self.load_template(template_name)
+        if not template:
+            raise ValueError(f"Шаблон '{template_name}' не найден")
+
+        prompt = f"""
+Ты — опытный преподаватель и создатель образовательных материалов. 
+Твоя задача — создать подробную структуру и контент для учебной презентации на тему "{topic}".
+
+ИСПОЛЬЗУЙ СТРОГО СЛЕДУЮЩУЮ СТРУКТУРУ СЛАЙДОВ:
 """
 
-        # Добавляем дополнительные пожелания, если они есть
+        # Добавляем инструкции для каждого слайда из шаблона
+        for slide_template in template["slides_structure"]:
+            prompt += f"""
+СЛАЙД {slide_template['slide_number']}: {slide_template['slide_title']}
+ИНСТРУКЦИЯ: {slide_template['instructions']}
+СОДЕРЖАНИЕ: Заполни 3-4 пункта содержания для этого слайда
+
+"""
+
+        # Добавляем дополнительные пожелания
         if additional_prompt:
-            prompt += f"\n\nДОПОЛНИТЕЛЬНЫЕ ПОЖЕЛАНИЯ:\n{additional_prompt}\n"
+            prompt += f"\nДОПОЛНИТЕЛЬНЫЕ ПОЖЕЛАНИЯ:\n{additional_prompt}\n"
 
         prompt += f"""
-
-Верни ответ в формате JSON, который легко распарсить. Структура JSON должна быть следующей:
+Верни ответ в формате JSON. Структура JSON должна быть следующей:
 
 {{
   "presentation_title": "Название презентации",
+  "template_used": "{template_name}",
   "slides": [
     {{
       "slide_number": 1,
       "slide_type": "title",
-      "slide_title": "Заголовок презентации",
+      "slide_title": "Название темы",
       "content": [
-        "Подзаголовок или дополнительная информация",
+        "Пункт 1",
+        "Пункт 2",
+        "Пункт 3"
       ]
     }},
-    {{
-      "slide_number": 2,
-      "slide_type": "content",
-      "slide_title": "Введение",
-      "content": [
-        "Текст для введения (5-7) предложенией и ключевые тезисы."
-      ]
-    }},
-    {{
-      "slide_number": 3,
-      "slide_type": "content",
-      "slide_title": "Цели",
-      "content": [
-        "Цель 1",
-        "Цель 2",
-        "Цель 3",
-        "Цель 4",
-        "Цель ..."
-      ]
-    }},
-    {{
-      "slide_number": 4,
-      "slide_type": "content",
-      "slide_title": "Основная часть",
-      "content": [
-        "Основная часть презентации, небольшой текст"
-      ]
-    }},
-    {{
-      "slide_number": 5,
-      "slide_type": "content",
-      "slide_title": "Детали",
-      "content": [
-        "Деталь 1",
-        "Деталь 2",
-        "Деталь 3",
-        "Деталь 4",
-        "Деталь ..."
-      ]
-    }},
-    {{
-      "slide_number": 6,
-      "slide_type": "content",
-      "slide_title": "Примеры",
-      "content": [
-        "Несколько примеров, которые явно отражают суть темы",
-        "Пример 1",
-        "Пример 2",
-        "Пример 3",
-        "Пример 4",
-        "Пример ..."
-      ]
-    }},
-    {{
-      "slide_number": 7,
-      "slide_type": "conclusion",
-      "slide_title": "Выводы",
-      "content": [
-        "Ключевой вывод 1",
-        "Ключевой вывод 2",
-        "Ключевой вывод ...",
-        "Призыв к действию"
-      ]
-    }}
+    // ... остальные слайды по структуре шаблона
   ]
 }}
 
-Используй четкие, лаконичные формулировки для пунктов списка.
-Содержание должно быть информативным и структурированным.
+ВАЖНЫЕ ТРЕБОВАНИЯ:
+- Строго следуй структуре шаблона
+- Для каждого слайда создай 3-4 информативных пункта
+- Используй образовательный стиль изложения
+- Делай содержание практическим и полезным для обучения
+- Избегай лишней информации, будь лаконичным
 
 Тема презентации: {topic}
 """
         return prompt
 
     def create_pptx_from_data(self, presentation_data, output_filename):
-        """
-        Создает PowerPoint файл из данных презентации.
-        """
+        """Создает PowerPoint файл из данных презентации."""
         try:
             prs = Presentation()
 
@@ -172,22 +151,17 @@ class PresentationGenerator:
 
                 if slide_type == "title":
                     slide = prs.slides.add_slide(title_slide_layout)
-
                     title_shape = slide.shapes.title
-                    subtitle_shape = slide.placeholders[1]
-
                     title_shape.text = slide_title
                     title_shape.text_frame.paragraphs[0].font.size = Pt(44)
                     title_shape.text_frame.paragraphs[0].font.bold = True
 
-                    if content:
-                        subtitle_shape.text = "\n".join(content)
-                        subtitle_shape.text_frame.paragraphs[0].font.size = Pt(24)
-                        subtitle_shape.text_frame.paragraphs[0].font.color.rgb = RGBColor(100, 100, 100)
+                    # Для титульного слайда не показываем подзаголовок (автора)
+                    subtitle_shape = slide.placeholders[1]
+                    subtitle_shape.text = ""  # Очищаем поле автора
 
                 else:
                     slide = prs.slides.add_slide(content_slide_layout)
-
                     title_shape = slide.shapes.title
                     content_shape = slide.placeholders[1]
 
@@ -218,9 +192,7 @@ class PresentationGenerator:
             return None
 
     def clean_json_response(self, response_text):
-        """
-        Очищает ответ от модели от лишних символов и извлекает JSON.
-        """
+        """Очищает ответ от модели от лишних символов и извлекает JSON."""
         try:
             cleaned_response = response_text.strip()
 
@@ -240,11 +212,9 @@ class PresentationGenerator:
             print(f"Исходный текст: {response_text}")
             return None
 
-    def generate_presentation(self, topic, num_slides=5, additional_prompt=""):
-        """
-        Основной метод для генерации презентации.
-        Возвращает путь к созданному файлу или None в случае ошибки.
-        """
+    def generate_presentation(self, topic, template_name="educational", additional_prompt=""):
+        """Основной метод для генерации презентации по шаблону."""
+
         # Генерируем имя файла
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_topic = "".join(c if c.isalnum() else "_" for c in topic)
@@ -253,10 +223,10 @@ class PresentationGenerator:
             f"presentation_{safe_topic}_{timestamp}.pptx"
         )
 
-        print(f"🔄 Генерирую презентацию '{topic}'...")
+        print(f"🔄 Генерирую презентацию '{topic}' по шаблону '{template_name}'...")
 
         # Создаем промпт и получаем ответ от Mistral AI
-        prompt = self.create_presentation_prompt(topic, num_slides, additional_prompt)
+        prompt = self.create_presentation_prompt(topic, template_name, additional_prompt)
         response_text = self.query_mistral_api(prompt)
 
         if not response_text:
@@ -281,14 +251,13 @@ class PresentationGenerator:
             return None
 
     def get_presentation_info(self, presentation_data):
-        """
-        Возвращает информацию о презентации для отправки пользователю.
-        """
+        """Возвращает информацию о презентации для отправки пользователю."""
         if not presentation_data:
             return None
 
         info = {
             'title': presentation_data.get('presentation_title', 'Без названия'),
+            'template': presentation_data.get('template_used', 'unknown'),
             'slides_count': len(presentation_data.get('slides', [])),
             'structure': []
         }
@@ -303,26 +272,26 @@ class PresentationGenerator:
         return info
 
 
-# Функция для обратной совместимости (если нужно)
-def generate_presentation(topic, num_slides=5, additional_prompt=""):
-    """
-    Упрощенная функция для генерации презентации.
-    """
+# Функция для обратной совместимости
+def generate_presentation(topic, template_name="educational", additional_prompt=""):
     generator = PresentationGenerator()
-    return generator.generate_presentation(topic, num_slides, additional_prompt)
+    return generator.generate_presentation(topic, template_name, additional_prompt)
 
 
 if __name__ == "__main__":
     # Тестовый запуск
     generator = PresentationGenerator()
 
-    print("=== Тест генератора презентаций ===")
+    print("=== Тест генератора презентаций с шаблонами ===")
+    print(f"Доступные шаблоны: {generator.get_available_templates()}")
+
     topic = input("Введите тему для теста: ").strip()
+    template = input("Введите имя шаблона (по умолчанию educational): ").strip() or "educational"
 
     result = generator.generate_presentation(
         topic=topic,
-        num_slides=3,
-        additional_prompt="сделать кратко и по делу"
+        template_name=template,
+        additional_prompt="сделать практично и с примерами из реальной жизни"
     )
 
     if result:
