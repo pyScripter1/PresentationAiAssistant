@@ -1,0 +1,62 @@
+{
+  "name": "educational",
+  "description": "Образовательный шаблон для учебных презентаций",
+  "slides_structure": [
+    {
+      "slide_number": 1,
+      "slide_type": "title",
+      "slide_title": "Название темы",
+      "content": [],
+      "instructions": "Создай заголовок презентации на указанную тему"
+    },
+    {
+      "slide_number": 2,
+      "slide_type": "content",
+      "slide_title": "Цели презентации",
+      "content": [],
+      "instructions": "Опиши 3-4 основные цели этой презентации, чему должен научиться слушатель"
+    },
+    {
+      "slide_number": 3,
+      "slide_type": "content",
+      "slide_title": "Введение и теоретические определения",
+      "content": [],
+      "instructions": "Дай введение в тему, объясни основные понятия и теоретические основы"
+    },
+    {
+      "slide_number": 4,
+      "slide_type": "content",
+      "slide_title": "Основная часть",
+      "content": [],
+      "instructions": "Раскрой основное содержание темы, ключевые аспекты и важные детали"
+    },
+    {
+      "slide_number": 5,
+      "slide_type": "content",
+      "slide_title": "Примеры и практическое применение",
+      "content": [],
+      "instructions": "Приведи конкретные примеры, кейсы или практические применения темы"
+    },
+    {
+      "slide_number": 6,
+      "slide_type": "content",
+      "slide_title": "Задания для самостоятельного решения",
+      "content": [],
+      "instructions": "Предложи 2-3 задания или упражнения для самостоятельной работы"
+    },
+    {
+      "slide_number": 7,
+      "slide_type": "content",
+      "slide_title": "Заключение и выводы",
+      "content": [],
+      "instructions": "Сформулируй основные выводы и заключение по теме"
+    },
+    {
+      "slide_number": 8,
+      "slide_type": "content",
+      "slide_title": "Домашнее задание",
+      "content": [],
+      "instructions": "Предложи домашнее задание для закрепления материала"
+    }
+  ]
+}
