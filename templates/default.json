@@ -1,0 +1,41 @@
+{
+  "name": "default",
+  "description": "Базовый шаблон презентации",
+  "slides_structure": [
+    {
+      "slide_number": 1,
+      "slide_type": "title",
+      "slide_title": "Название презентации",
+      "content": [],
+      "instructions": "Создай заголовок презентации"
+    },
+    {
+      "slide_number": 2,
+      "slide_type": "content",
+      "slide_title": "Введение",
+      "content": [],
+      "instructions": "Представь тему и дай общее введение"
+    },
+    {
+      "slide_number": 3,
+      "slide_type": "content",
+      "slide_title": "Основное содержание",
+      "content": [],
+      "instructions": "Раскрой основную тему презентации"
+    },
+    {
+      "slide_number": 4,
+      "slide_type": "content",
+      "slide_title": "Примеры",
+      "content": [],
+      "instructions": "Приведи примеры и кейсы"
+    },
+    {
+      "slide_number": 5,
+      "slide_type": "content",
+      "slide_title": "Заключение",
+      "content": [],
+      "instructions": "Сделай выводы и заключение"
+    }
+  ]
+}
