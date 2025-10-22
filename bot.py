@@ -1,5 +1,6 @@
 import os
 import logging
+import random
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -16,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Состояния для ConversationHandler
-TOPIC, SLIDES, ADDITIONAL, CONFIRM = range(4)
+TOPIC, SLIDES, DESIGN, ADDITIONAL, CONFIRM = range(5)
 
 
 class PresentationBot:
@@ -26,7 +27,7 @@ class PresentationBot:
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "👋 Привет! Я бот для генерации образовательных презентаций.\n"
-            "Я помогу создать презентацию на любую тему по учебному шаблону.\n\n"
+            "Я создам профессиональную презентацию с дизайном на любую тему!\n\n"
             "Для начала введите команду /generate"
         )
 
@@ -81,6 +82,58 @@ class PresentationBot:
         # Используем образовательный шаблон по умолчанию
         context.user_data['template_name'] = "educational"
 
+        # Предлагаем выбрать дизайн
+        available_themes = self.generator.get_available_themes()
+
+        if available_themes:
+            keyboard = [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']]
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+
+            await update.message.reply_text(
+                "🎨 Выберите дизайн презентации:",
+                reply_markup=reply_markup
+            )
+            return DESIGN
+        else:
+            # Если нет тем, переходим к дополнениям
+            context.user_data['design_theme'] = 'modern_blue'
+            await update.message.reply_text(
+                "💡 Есть ли дополнительные пожелания к презентации?\n"
+                "(например: 'больше примеров', 'акцент на данных', 'минимум текста')\n\n"
+                "Или напишите 'нет', если дополнений нет:"
+            )
+            return ADDITIONAL
+
+    async def get_design(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        design_choice = update.message.text
+
+        if design_choice == '🎨 Случайный дизайн':
+            available_themes = self.generator.get_available_themes()
+            design_theme = random.choice(available_themes) if available_themes else 'modern_blue'
+            context.user_data['design_theme'] = design_theme
+            await update.message.reply_text(
+                f"🎲 Выбран случайный дизайн: {design_theme}",
+                reply_markup=ReplyKeyboardRemove()
+            )
+        else:
+            # Проверяем, что выбранная тема существует
+            available_themes = self.generator.get_available_themes()
+            if design_choice in available_themes:
+                context.user_data['design_theme'] = design_choice
+                await update.message.reply_text(
+                    f"✅ Выбран дизайн: {design_choice}",
+                    reply_markup=ReplyKeyboardRemove()
+                )
+            else:
+                await update.message.reply_text(
+                    "❌ Такой темы дизайна нет. Выберите из предложенных:",
+                    reply_markup=ReplyKeyboardMarkup(
+                        [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']],
+                        one_time_keyboard=True
+                    )
+                )
+                return DESIGN
+
         await update.message.reply_text(
             "💡 Есть ли дополнительные пожелания к презентации?\n"
             "(например: 'больше примеров', 'акцент на данных', 'минимум текста')\n\n"
@@ -99,13 +152,15 @@ class PresentationBot:
         topic = context.user_data['topic']
         num_slides = context.user_data['num_slides']
         template_name = context.user_data['template_name']
+        design_theme = context.user_data.get('design_theme', 'modern_blue')
         additional_text = context.user_data['additional']
 
         confirmation_text = (
             f"✅ Подтвердите создание презентации:\n\n"
             f"🎯 Тема: {topic}\n"
             f"📊 Слайдов: {num_slides}\n"
-            f"🎨 Шаблон: {template_name}\n"
+            f"📝 Шаблон: {template_name}\n"
+            f"🎨 Дизайн: {design_theme}\n"
         )
 
         if additional_text:
@@ -133,6 +188,7 @@ class PresentationBot:
                 topic = context.user_data['topic']
                 num_slides = context.user_data['num_slides']
                 template_name = context.user_data['template_name']
+                design_theme = context.user_data.get('design_theme', 'modern_blue')
                 additional = context.user_data['additional']
 
                 # Добавляем информацию о количестве слайдов в дополнения
@@ -141,12 +197,14 @@ class PresentationBot:
                 else:
                     full_additional = f"Количество слайдов: {num_slides}"
 
-                logger.info(f"Генерация презентации: тема='{topic}', шаблон='{template_name}', слайдов={num_slides}")
+                logger.info(
+                    f"Генерация презентации: тема='{topic}', шаблон='{template_name}', дизайн='{design_theme}', слайдов={num_slides}")
 
                 file_path = self.generator.generate_presentation(
                     topic=topic,
                     template_name=template_name,
-                    additional_prompt=full_additional
+                    additional_prompt=full_additional,
+                    design_theme=design_theme
                 )
 
                 if file_path and os.path.exists(file_path):
@@ -155,7 +213,10 @@ class PresentationBot:
                         await update.message.reply_document(
                             document=file,
                             filename=os.path.basename(file_path),
-                            caption="🎉 Ваша презентация готова!"
+                            caption=f"🎉 Ваша презентация готова!\n"
+                                    f"Тема: {topic}\n"
+                                    f"Слайдов: {num_slides}\n"
+                                    f"Дизайн: {design_theme}"
                         )
                     # Удаляем временный файл
                     os.remove(file_path)
@@ -194,18 +255,29 @@ class PresentationBot:
             "📚 Доступные команды:\n\n"
             "/start - Начать работу с ботом\n"
             "/generate - Создать новую презентацию\n"
+            "/themes - Показать доступные темы дизайна\n"
             "/help - Показать эту справку\n\n"
-            "Бот создает образовательные презентации по шаблону:\n"
-            "1. Название темы\n"
-            "2. Цели презентации\n"
-            "3. Теоретические определения\n"
-            "4. Основная часть\n"
-            "5. Примеры\n"
-            "6. Задания\n"
-            "7. Выводы\n"
-            "8. Домашнее задание"
+            "🎨 Бот создает презентации с:\n"
+            "• Профессиональным дизайном\n"
+            "• Разными типами контента\n"
+            "• Образовательной структурой\n"
+            "• Автоматическим форматированием"
         )
         await update.message.reply_text(help_text)
+
+    async def show_themes(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Показывает доступные темы дизайна"""
+        available_themes = self.generator.get_available_themes()
+
+        if available_themes:
+            themes_text = "🎨 Доступные темы дизайна:\n\n"
+            for theme in available_themes:
+                themes_text += f"• {theme}\n"
+            themes_text += "\nИспользуйте /generate чтобы создать презентацию с выбранным дизайном!"
+        else:
+            themes_text = "❌ Темы дизайна не найдены. Используется стандартный дизайн."
+
+        await update.message.reply_text(themes_text)
 
 
 def main():
@@ -221,6 +293,7 @@ def main():
         states={
             TOPIC: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_topic)],
             SLIDES: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_slides)],
+            DESIGN: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_design)],
             ADDITIONAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_additional)],
             CONFIRM: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.confirm_generation)],
         },
@@ -229,6 +302,7 @@ def main():
 
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("help", bot.help_command))
+    application.add_handler(CommandHandler("themes", bot.show_themes))
     application.add_handler(conv_handler)
 
     # Запуск бота
