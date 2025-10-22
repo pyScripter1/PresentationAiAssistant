@@ -1,62 +1,71 @@
 {
   "name": "educational",
-  "description": "Образовательный шаблон для учебных презентаций",
+  "description": "Образовательный шаблон с разными типами контента",
+  "default_design_theme": "modern_blue",
   "slides_structure": [
     {
       "slide_number": 1,
       "slide_type": "title",
+      "content_type": "title_only",
       "slide_title": "Название темы",
       "content": [],
       "instructions": "Создай заголовок презентации на указанную тему"
     },
     {
       "slide_number": 2,
-      "slide_type": "content",
+      "slide_type": "objectives",
+      "content_type": "bullet_points",
       "slide_title": "Цели презентации",
       "content": [],
-      "instructions": "Опиши 3-4 основные цели этой презентации, чему должен научиться слушатель"
+      "instructions": "Опиши 3-4 основные цели этой презентации в виде пунктов"
     },
     {
       "slide_number": 3,
-      "slide_type": "content",
+      "slide_type": "introduction",
+      "content_type": "paragraph",
       "slide_title": "Введение и теоретические определения",
       "content": [],
-      "instructions": "Дай введение в тему, объясни основные понятия и теоретические основы"
+      "instructions": "Напиши связный текст на 150-200 слов с введением в тему"
     },
     {
       "slide_number": 4,
-      "slide_type": "content",
+      "slide_type": "main_content",
+      "content_type": "two_columns",
       "slide_title": "Основная часть",
       "content": [],
-      "instructions": "Раскрой основное содержание темы, ключевые аспекты и важные детали"
+      "instructions": "Представь информацию в двух колонках: теория слева, примеры справа"
     },
     {
       "slide_number": 5,
-      "slide_type": "content",
+      "slide_type": "examples",
+      "content_type": "bullet_points",
       "slide_title": "Примеры и практическое применение",
       "content": [],
-      "instructions": "Приведи конкретные примеры, кейсы или практические применения темы"
+      "instructions": "Приведи 3-4 конкретных примера в виде пунктов"
     },
     {
       "slide_number": 6,
-      "slide_type": "content",
+      "slide_type": "exercises",
+      "content_type": "numbered_list",
       "slide_title": "Задания для самостоятельного решения",
       "content": [],
-      "instructions": "Предложи 2-3 задания или упражнения для самостоятельной работы"
+      "instructions": "Создай 3-4 задания с нумерацией для самостоятельной работы"
     },
     {
       "slide_number": 7,
-      "slide_type": "content",
+      "slide_type": "conclusion",
+      "content_type": "paragraph",
       "slide_title": "Заключение и выводы",
       "content": [],
-      "instructions": "Сформулируй основные выводы и заключение по теме"
+      "instructions": "Напиши заключительный текст на 120-180 слов с выводами"
     },
     {
       "slide_number": 8,
-      "slide_type": "content",
+      "slide_type": "homework",
+      "content_type": "bullet_points",
       "slide_title": "Домашнее задание",
       "content": [],
-      "instructions": "Предложи домашнее задание для закрепления материала"
+      "instructions": "Предложи 3-4 пункта домашнего задания"
     }
   ]
 }
