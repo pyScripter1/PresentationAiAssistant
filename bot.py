@@ -129,7 +129,8 @@ class PresentationBot:
                     "❌ Такой темы дизайна нет. Выберите из предложенных:",
                     reply_markup=ReplyKeyboardMarkup(
                         [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']],
-                        one_time_keyboard=True
+                        one_time_keyboard=True,
+                        resize_keyboard=True
                     )
                 )
                 return DESIGN
@@ -169,7 +170,7 @@ class PresentationBot:
         confirmation_text += "\nСоздаем презентацию?"
 
         keyboard = [['✅ Да', '❌ Нет']]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
 
         await update.message.reply_text(confirmation_text, reply_markup=reply_markup)
         return CONFIRM
@@ -216,7 +217,8 @@ class PresentationBot:
                             caption=f"🎉 Ваша презентация готова!\n"
                                     f"Тема: {topic}\n"
                                     f"Слайдов: {num_slides}\n"
-                                    f"Дизайн: {design_theme}"
+                                    f"Дизайн: {design_theme}\n\n"
+                                    f"/generate - Сгенерировать еще"
                         )
                     # Удаляем временный файл
                     os.remove(file_path)
