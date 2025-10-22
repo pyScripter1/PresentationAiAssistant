@@ -1,0 +1,35 @@
+{
+  "name": "modern_blue",
+  "description": "Современная синяя тема для образовательных презентаций",
+  "colors": {
+    "primary": "#2C5AA0",
+    "secondary": "#4A90E2",
+    "accent": "#FF6B6B",
+    "background": "#FFFFFF",
+    "text_primary": "#2C3E50",
+    "text_secondary": "#7F8C8D"
+  },
+  "fonts": {
+    "title": {"name": "Calibri", "size": 44, "bold": true, "color": "#2C5AA0"},
+    "heading": {"name": "Calibri", "size": 32, "bold": true, "color": "#2C3E50"},
+    "body": {"name": "Calibri", "size": 18, "bold": false, "color": "#2C3E50"},
+    "bullet_points": {"name": "Calibri", "size": 16, "bold": false, "color": "#2C3E50"}
+  },
+  "background": {
+    "type": "gradient",
+    "color1": "#FFFFFF",
+    "color2": "#F8F9FA"
+  },
+  "layouts": {
+    "title_slide": {
+      "background_color": "#2C5AA0",
+      "title_color": "#FFFFFF",
+      "subtitle_color": "#E8F4FD"
+    },
+    "content_slide": {
+      "background_color": "#FFFFFF",
+      "title_color": "#2C5AA0",
+      "content_color": "#2C3E50"
+    }
+  }
+}
