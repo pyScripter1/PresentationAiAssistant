@@ -1,4 +1,5 @@
 import logging
+import json
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT, MSO_AUTO_SIZE
@@ -88,39 +89,104 @@ class ContentFormatter:
             self._apply_font_settings(p, font_settings)
 
     def _format_two_columns(self, slide, content, theme_name):
-        """Форматирует в две колонки (упрощенная версия)"""
+        """Форматирует в две колонки - исправленная версия"""
         content_shape = slide.placeholders[1]
         text_frame = content_shape.text_frame
         text_frame.clear()
         text_frame.word_wrap = True
 
-        # Разделяем контент на две части
-        mid_point = len(content) // 2
-        left_content = content[:mid_point]
-        right_content = content[mid_point:]
+        # Обрабатываем контент для двух колонок
+        left_column_content = []
+        right_column_content = []
 
-        # Левая колонка
-        p = text_frame.paragraphs[0]
-        p.text = "ЛЕВАЯ КОЛОНКА:"
-        p.alignment = PP_PARAGRAPH_ALIGNMENT.LEFT
+        # Анализируем структуру контента
+        for item in content:
+            if isinstance(item, str):
+                # Пытаемся распарсить JSON строку
+                try:
+                    parsed_item = json.loads(item)
+                    if isinstance(parsed_item, dict):
+                        self._process_column_data(parsed_item, left_column_content, right_column_content)
+                    else:
+                        # Если это простая строка, добавляем в левую колонку
+                        left_column_content.append(item)
+                except (json.JSONDecodeError, TypeError):
+                    # Если не JSON, добавляем как обычный текст
+                    left_column_content.append(item)
+            elif isinstance(item, dict):
+                self._process_column_data(item, left_column_content, right_column_content)
+            else:
+                left_column_content.append(str(item))
 
-        for point in left_content:
+        # Если не удалось разделить на колонки, делим контент пополам
+        if not left_column_content and not right_column_content:
+            mid_point = len(content) // 2
+            left_column_content = content[:mid_point]
+            right_column_content = content[mid_point:]
+
+        # Форматируем левую колонку
+        if left_column_content:
+            p = text_frame.paragraphs[0]
+            p.text = "📘 Основные положения:"
+            p.alignment = PP_PARAGRAPH_ALIGNMENT.LEFT
+            font_settings = self.design_manager.get_font_settings(theme_name, 'heading')
+            self._apply_font_settings(p, font_settings)
+
+            for point in left_column_content:
+                p = text_frame.add_paragraph()
+                clean_point = self._clean_content_point(point)
+                p.text = f"• {clean_point}"
+                p.level = 0
+                font_settings = self.design_manager.get_font_settings(theme_name, 'bullet_points')
+                self._apply_font_settings(p, font_settings)
+
+        # Добавляем разделитель между колонками
+        if left_column_content and right_column_content:
             p = text_frame.add_paragraph()
-            p.text = f"• {point}"
-            p.level = 0
+            p.text = ""  # Пустая строка для разделения
 
-        # Правая колонка
-        p = text_frame.add_paragraph()
-        p.text = "\nПРАВАЯ КОЛОНКА:"
-        p.alignment = PP_PARAGRAPH_ALIGNMENT.LEFT
-
-        for point in right_content:
+        # Форматируем правую колонку
+        if right_column_content:
             p = text_frame.add_paragraph()
-            p.text = f"• {point}"
-            p.level = 0
+            p.text = "📗 Примеры и применение:"
+            p.alignment = PP_PARAGRAPH_ALIGNMENT.LEFT
+            font_settings = self.design_manager.get_font_settings(theme_name, 'heading')
+            self._apply_font_settings(p, font_settings)
 
-        font_settings = self.design_manager.get_font_settings(theme_name, 'body')
-        self._apply_font_settings(text_frame.paragraphs[0], font_settings)
+            for point in right_column_content:
+                p = text_frame.add_paragraph()
+                clean_point = self._clean_content_point(point)
+                p.text = f"• {clean_point}"
+                p.level = 0
+                font_settings = self.design_manager.get_font_settings(theme_name, 'bullet_points')
+                self._apply_font_settings(p, font_settings)
+
+    def _process_column_data(self, data, left_column, right_column):
+        """Обрабатывает структурированные данные для колонок"""
+        if isinstance(data, dict):
+            # Обрабатываем структуру с column_title и column_content
+            column_title = data.get('column_title', '')
+            column_content = data.get('column_content', [])
+
+            if column_title.lower() in ['теория', 'theory', 'основы', 'определения']:
+                left_column.append(f"{column_title}:")
+                left_column.extend(column_content)
+            elif column_title.lower() in ['примеры', 'examples', 'практика', 'применение']:
+                right_column.append(f"{column_title}:")
+                right_column.extend(column_content)
+            else:
+                # Если заголовок не распознан, добавляем в левую колонку
+                left_column.append(f"{column_title}:")
+                left_column.extend(column_content)
+
+    def _clean_content_point(self, point):
+        """Очищает пункт контента от лишних символов"""
+        if isinstance(point, str):
+            # Убираем фигурные скобки и кавычки
+            point = point.replace('{', '').replace('}', '').replace('"', '').replace("'", "")
+            # Убираем лишние пробелы
+            point = ' '.join(point.split())
+        return str(point)
 
     def _format_title_only(self, slide, theme_name):
         """Форматирует слайд только с заголовком"""
