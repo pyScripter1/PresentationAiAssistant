@@ -1,0 +1,95 @@
+{
+  "name": "corporate",
+  "description": "Корпоративный шаблон для бизнес-презентаций",
+  "default_design_theme": "modern_blue",
+  "slides_structure": [
+    {
+      "slide_number": 1,
+      "slide_type": "title",
+      "content_type": "title_only",
+      "slide_title": "Название проекта/презентации",
+      "content": [],
+      "instructions": "Создай профессиональный заголовок для бизнес-презентации"
+    },
+    {
+      "slide_number": 2,
+      "slide_type": "agenda",
+      "content_type": "bullet_points",
+      "slide_title": "Повестка встречи",
+      "content": [],
+      "instructions": "Создай 4-5 пунктов повестки встречи в деловом стиле"
+    },
+    {
+      "slide_number": 3,
+      "slide_type": "executive_summary",
+      "content_type": "paragraph",
+      "slide_title": "Краткий обзор",
+      "content": [],
+      "instructions": "Напиши краткий обзор на 150-200 слов в деловом стиле"
+    },
+    {
+      "slide_number": 4,
+      "slide_type": "problem_statement",
+      "content_type": "bullet_points",
+      "slide_title": "Постановка проблемы",
+      "content": [],
+      "instructions": "Опиши 3-4 ключевые проблемы или вызовы"
+    },
+    {
+      "slide_number": 5,
+      "slide_type": "solution",
+      "content_type": "two_columns",
+      "slide_title": "Предлагаемое решение",
+      "content": [],
+      "instructions": "Опиши решение: левая колонка - подход, правая - преимущества"
+    },
+    {
+      "slide_number": 6,
+      "slide_type": "metrics",
+      "content_type": "bullet_points",
+      "slide_title": "Ключевые метрики",
+      "content": [],
+      "instructions": "Представь 4-5 измеримых показателей успеха"
+    },
+    {
+      "slide_number": 7,
+      "slide_type": "timeline",
+      "content_type": "numbered_list",
+      "slide_title": "План реализации",
+      "content": [],
+      "instructions": "Создай нумерованный план из 4-5 этапов с сроками"
+    },
+    {
+      "slide_number": 8,
+      "slide_type": "team",
+      "content_type": "bullet_points",
+      "slide_title": "Команда проекта",
+      "content": [],
+      "instructions": "Опиши ключевых участников команды и их роли"
+    },
+    {
+      "slide_number": 9,
+      "slide_type": "budget",
+      "content_type": "bullet_points",
+      "slide_title": "Бюджет и ресурсы",
+      "content": [],
+      "instructions": "Опиши основные статьи бюджета и необходимые ресурсы"
+    },
+    {
+      "slide_number": 10,
+      "slide_type": "next_steps",
+      "content_type": "numbered_list",
+      "slide_title": "Следующие шаги",
+      "content": [],
+      "instructions": "Определи 3-4 конкретных следующих шага с ответственными"
+    },
+    {
+      "slide_number": 11,
+      "slide_type": "qna",
+      "content_type": "title_only",
+      "slide_title": "Вопросы и ответы",
+      "content": [],
+      "instructions": "Создай заголовок для секции вопросов и ответов"
+    }
+  ]
+}
