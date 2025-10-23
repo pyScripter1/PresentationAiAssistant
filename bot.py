@@ -87,7 +87,7 @@ class PresentationBot:
 
         if available_themes:
             keyboard = [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']]
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
 
             await update.message.reply_text(
                 "🎨 Выберите дизайн презентации:",
