@@ -284,73 +284,96 @@ class PresentationGenerator:
             raise ValueError(f"Шаблон '{template_name}' не найден")
 
         prompt = f"""
-Ты — опытный преподаватель и создатель образовательных материалов. 
-Твоя задача — создать подробную структуру и контент для учебной презентации на тему "{topic}".
+    Ты — опытный преподаватель и создатель образовательных материалов. 
+    Твоя задача — создать подробную структуру и контент для учебной презентации на тему "{topic}".
 
-СТРУКТУРА ПРЕЗЕНТАЦИИ:
-"""
+    СТРУКТУРА ПРЕЗЕНТАЦИИ:
+    """
 
         # Добавляем инструкции для каждого слайда из шаблона
         for slide_template in template["slides_structure"]:
             content_type_instruction = ""
             if slide_template["content_type"] == "paragraph":
-                content_type_instruction = "Напиши связный текст без пунктов."
+                content_type_instruction = "Напиши связный текст без пунктов. Объедини все в один абзац."
             elif slide_template["content_type"] == "bullet_points":
-                content_type_instruction = "Используй маркированный список с 3-4 пунктами."
+                content_type_instruction = "Используй маркированный список с 3-4 четкими пунктами."
             elif slide_template["content_type"] == "numbered_list":
-                content_type_instruction = "Используй нумерованный список с 3-4 пунктами."
+                content_type_instruction = "Используй нумерованный список с 3-4 пунктами для заданий."
             elif slide_template["content_type"] == "two_columns":
-                content_type_instruction = "Раздели информацию на две логические части для двух колонок."
+                content_type_instruction = "Для двух колонок создай 4-6 общих пунктов. Я сам разделю их на колонки. НЕ используй JSON структуры!"
             elif slide_template["content_type"] == "title_only":
                 content_type_instruction = "Только заголовок, без дополнительного контента."
 
             prompt += f"""
-Слайд {slide_template['slide_number']}: {slide_template['slide_title']}
-Тип контента: {content_type_instruction}
-Задача: {slide_template['instructions']}
-"""
+    Слайд {slide_template['slide_number']}: {slide_template['slide_title']}
+    Тип контента: {content_type_instruction}
+    Задача: {slide_template['instructions']}
+    """
 
         # Добавляем дополнительные пожелания
         if additional_prompt:
             prompt += f"\nДОПОЛНИТЕЛЬНЫЕ ТРЕБОВАНИЯ:\n{additional_prompt}\n"
 
         prompt += f"""
-ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+    ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
 
-{{
-  "presentation_title": "Название презентации",
-  "template_used": "{template_name}",
-  "slides": [
     {{
-      "slide_number": 1,
-      "slide_type": "title",
-      "content_type": "title_only",
-      "slide_title": "Название темы",
-      "content": []
-    }},
-    {{
-      "slide_number": 2,
-      "slide_type": "objectives",
-      "content_type": "bullet_points",
-      "slide_title": "Цели презентации",
-      "content": [
-        "Пункт 1",
-        "Пункт 2",
-        "Пункт 3"
+      "presentation_title": "Название презентации",
+      "template_used": "{template_name}",
+      "slides": [
+        {{
+          "slide_number": 1,
+          "slide_type": "title",
+          "content_type": "title_only",
+          "slide_title": "Название темы",
+          "content": []
+        }},
+        {{
+          "slide_number": 2,
+          "slide_type": "objectives", 
+          "content_type": "bullet_points",
+          "slide_title": "Цели презентации",
+          "content": [
+            "Понять основные концепции темы",
+            "Научиться применять знания на практике",
+            "Развить критическое мышление"
+          ]
+        }},
+        {{
+          "slide_number": 3,
+          "slide_type": "introduction",
+          "content_type": "paragraph", 
+          "slide_title": "Введение",
+          "content": [
+            "Здесь будет связный текст введения без пунктов..."
+          ]
+        }},
+        {{
+          "slide_number": 4,
+          "slide_type": "main_content",
+          "content_type": "two_columns",
+          "slide_title": "Основная часть",
+          "content": [
+            "Основное понятие 1 с объяснением",
+            "Основное понятие 2 с характеристиками", 
+            "Практический пример 1 для иллюстрации",
+            "Практический пример 2 из реальной жизни",
+            "Ключевой вывод по теме",
+            "Дополнительная информация для понимания"
+          ]
+        }}
+        // ... добавь остальные слайды по структуре шаблона
       ]
     }}
-    // ... добавь остальные слайды по структуре шаблона
-  ]
-}}
 
-ВАЖНО: 
-- Строго следуй типам контента для каждого слайда
-- Для paragraph создавай связный текст в массиве content
-- Для bullet_points и numbered_list используй массив с пунктами
-- Все строки должны быть правильно экранированы
+    ВАЖНЫЕ ПРАВИЛА:
+    1. Для two_columns НЕ используй JSON структуры - только простой текст в массиве content
+    2. Для paragraph объединяй весь текст в один элемент массива
+    3. Для bullet_points и numbered_list используй массив с отдельными пунктами
+    4. Всегда экранируй кавычки в тексте
 
-Тема: {topic}
-"""
+    Тема: {topic}
+    """
         return prompt
 
     def create_pptx_from_data(self, presentation_data, output_filename, design_theme=None):
