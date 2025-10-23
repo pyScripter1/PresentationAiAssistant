@@ -1,0 +1,95 @@
+{
+  "name": "creative",
+  "description": "Креативный шаблон для презентаций и выступлений",
+  "default_design_theme": "elegant_green",
+  "slides_structure": [
+    {
+      "slide_number": 1,
+      "slide_type": "title",
+      "content_type": "title_only",
+      "slide_title": "Захватывающий заголовок",
+      "content": [],
+      "instructions": "Создай креативный и запоминающийся заголовок"
+    },
+    {
+      "slide_number": 2,
+      "slide_type": "hook",
+      "content_type": "paragraph",
+      "slide_title": "История, которая зацепит",
+      "content": [],
+      "instructions": "Напиши короткую историю или пример, который привлечет внимание аудитории"
+    },
+    {
+      "slide_number": 3,
+      "slide_type": "big_idea",
+      "content_type": "paragraph",
+      "slide_title": "Основная идея",
+      "content": [],
+      "instructions": "Сформулируй основную идею презентации вдохновляющим языком"
+    },
+    {
+      "slide_number": 4,
+      "slide_type": "why_matters",
+      "content_type": "bullet_points",
+      "slide_title": "Почему это важно?",
+      "content": [],
+      "instructions": "Объясни 3-4 причины, почему эта тема важна для аудитории"
+    },
+    {
+      "slide_number": 5,
+      "slide_type": "surprising_facts",
+      "content_type": "bullet_points",
+      "slide_title": "Неожиданные факты",
+      "content": [],
+      "instructions": "Представь 3-4 удивительных или неожиданных факта по теме"
+    },
+    {
+      "slide_number": 6,
+      "slide_type": "visual_story",
+      "content_type": "paragraph",
+      "slide_title": "Визуальная история",
+      "content": [],
+      "instructions": "Опиши визуальный пример или кейс, который иллюстрирует тему"
+    },
+    {
+      "slide_number": 7,
+      "slide_type": "how_it_works",
+      "content_type": "two_columns",
+      "slide_title": "Как это работает?",
+      "content": [],
+      "instructions": "Объясни механизм работы: левая колонка - принципы, правая - примеры"
+    },
+    {
+      "slide_number": 8,
+      "slide_type": "success_stories",
+      "content_type": "bullet_points",
+      "slide_title": "Истории успеха",
+      "content": [],
+      "instructions": "Расскажи 3-4 вдохновляющие истории успеха или кейсы"
+    },
+    {
+      "slide_number": 9,
+      "slide_type": "call_to_action",
+      "content_type": "numbered_list",
+      "slide_title": "Призыв к действию",
+      "content": [],
+      "instructions": "Создай 3-4 конкретных шага, которые аудитория может сделать прямо сейчас"
+    },
+    {
+      "slide_number": 10,
+      "slide_type": "takeaways",
+      "content_type": "bullet_points",
+      "slide_title": "Ключевые выводы",
+      "content": [],
+      "instructions": "Сформулируй 3-4 главных вывода из презентации"
+    },
+    {
+      "slide_number": 11,
+      "slide_type": "final_thought",
+      "content_type": "paragraph",
+      "slide_title": "Финальная мысль",
+      "content": [],
+      "instructions": "Напиши вдохновляющую заключительную мысль"
+    }
+  ]
+}
