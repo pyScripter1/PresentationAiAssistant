@@ -10,10 +10,10 @@
     "text_secondary": "#7F8C8D"
   },
   "fonts": {
-    "title": {"name": "Calibri", "size": 44, "bold": true, "color": "#2C5AA0"},
-    "heading": {"name": "Calibri", "size": 32, "bold": true, "color": "#2C3E50"},
-    "body": {"name": "Calibri", "size": 18, "bold": false, "color": "#2C3E50"},
-    "bullet_points": {"name": "Calibri", "size": 16, "bold": false, "color": "#2C3E50"}
+    "title": {"name": "Arial", "size": 40, "bold": true, "color": "#2C5AA0"},
+    "heading": {"name": "Arial", "size": 28, "bold": true, "color": "#2C3E50"},
+    "body": {"name": "Arial", "size": 18, "bold": false, "color": "#2C3E50"},
+    "bullet_points": {"name": "Arial", "size": 18, "bold": false, "color": "#2C3E50"}
   },
   "background": {
     "type": "gradient",
