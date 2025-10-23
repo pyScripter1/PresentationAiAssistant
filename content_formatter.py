@@ -135,7 +135,7 @@ class ContentFormatter:
             for point in left_column_content:
                 p = text_frame.add_paragraph()
                 clean_point = self._clean_content_point(point)
-                p.text = f"• {clean_point}"
+                p.text = f"{clean_point}"
                 p.level = 0
                 font_settings = self.design_manager.get_font_settings(theme_name, 'bullet_points')
                 self._apply_font_settings(p, font_settings)
@@ -156,7 +156,7 @@ class ContentFormatter:
             for point in right_column_content:
                 p = text_frame.add_paragraph()
                 clean_point = self._clean_content_point(point)
-                p.text = f"• {clean_point}"
+                p.text = f"{clean_point}"
                 p.level = 0
                 font_settings = self.design_manager.get_font_settings(theme_name, 'bullet_points')
                 self._apply_font_settings(p, font_settings)
