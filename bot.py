@@ -17,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Состояния для ConversationHandler
-TOPIC, SLIDES, DESIGN, ADDITIONAL, CONFIRM = range(5)
+TEMPLATE, TOPIC, SLIDES, DESIGN, ADDITIONAL, CONFIRM = range(6)
 
 
 class PresentationBot:
@@ -26,8 +26,8 @@ class PresentationBot:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
-            "👋 Привет! Я бот для генерации образовательных презентаций.\n"
-            "Я создам профессиональную презентацию с дизайном на любую тему!\n\n"
+            "👋 Привет! Я бот для генерации профессиональных презентаций.\n"
+            "Я создам презентацию с дизайном на любую тему!\n\n"
             "Для начала введите команду /generate"
         )
 
@@ -35,11 +35,56 @@ class PresentationBot:
         # Сбрасываем данные пользователя
         context.user_data.clear()
 
+        # Предлагаем выбрать шаблон
+        available_templates = self.generator.get_available_templates()
+
+        keyboard = [[template] for template in available_templates]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+
+        template_descriptions = {
+            "educational": "🎓 Образовательный - для уроков, лекций и учебных материалов",
+            "corporate": "💼 Корпоративный - для бизнес-презентаций и отчетов",
+            "creative": "🎨 Креативный - для вдохновляющих выступлений и стартапов"
+        }
+
+        description_text = "📝 Выберите тип презентации:\n\n"
+        for template in available_templates:
+            description_text += f"• {template_descriptions.get(template, template)}\n"
+
         await update.message.reply_text(
-            "🎯 Введите тему для презентации:",
-            reply_markup=ReplyKeyboardRemove()
+            description_text,
+            reply_markup=reply_markup
         )
-        return TOPIC
+        return TEMPLATE
+
+    async def process_template(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        template_choice = update.message.text
+
+        available_templates = self.generator.get_available_templates()
+        if template_choice in available_templates:
+            context.user_data['template_name'] = template_choice
+
+            template_info = {
+                "educational": "Отлично! Создадим образовательную презентацию 🎓",
+                "corporate": "Отлично! Создадим бизнес-презентацию 💼",
+                "creative": "Отлично! Создадим креативную презентацию 🎨"
+            }
+
+            await update.message.reply_text(
+                f"{template_info.get(template_choice, '✅ Выбран шаблон: ' + template_choice)}\n\n"
+                f"🎯 Теперь введите тему для презентации:",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            return TOPIC
+        else:
+            await update.message.reply_text(
+                "❌ Такого шаблона нет. Выберите из предложенных:",
+                reply_markup=ReplyKeyboardMarkup(
+                    [[template] for template in available_templates],
+                    one_time_keyboard=True
+                )
+            )
+            return TEMPLATE
 
     async def get_topic(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         topic = update.message.text
@@ -49,10 +94,17 @@ class PresentationBot:
 
         context.user_data['topic'] = topic.strip()
 
+        template_name = context.user_data['template_name']
+        slide_recommendations = {
+            "educational": "8 слайдов (оптимально для урока)",
+            "corporate": "10 слайдов (стандарт для бизнес-презентации)",
+            "creative": "10 слайдов (идеально для выступления)"
+        }
+
         await update.message.reply_text(
             f"📊 Тема: {topic}\n\n"
             f"Сколько слайдов должно быть в презентации? (от 3 до {Config.MAX_SLIDES}):\n"
-            f"Рекомендуется 8 слайдов для полного образовательного шаблона."
+            f"Рекомендуется: {slide_recommendations.get(template_name, '8 слайдов')}"
         )
         return SLIDES
 
@@ -71,26 +123,39 @@ class PresentationBot:
                 )
                 num_slides = Config.MAX_SLIDES
         except ValueError:
-            # Если введено не число, используем значение по умолчанию
-            num_slides = Config.DEFAULT_SLIDES
+            # Если введено не число, используем значение по умолчанию для шаблона
+            default_slides = {
+                "educational": 8,
+                "corporate": 10,
+                "creative": 10
+            }
+            template_name = context.user_data['template_name']
+            num_slides = default_slides.get(template_name, Config.DEFAULT_SLIDES)
             await update.message.reply_text(
                 f"⚠️ Установлено значение по умолчанию: {num_slides} слайдов"
             )
 
         context.user_data['num_slides'] = num_slides
 
-        # Используем образовательный шаблон по умолчанию
-        context.user_data['template_name'] = "educational"
-
         # Предлагаем выбрать дизайн
         available_themes = self.generator.get_available_themes()
 
         if available_themes:
             keyboard = [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']]
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+
+            theme_descriptions = {
+                "modern_blue": "🔵 Современный синий - профессионально и строго",
+                "elegant_green": "🟢 Элегантный зеленый - свежо и креативно"
+            }
+
+            description_text = "🎨 Выберите дизайн презентации:\n\n"
+            for theme in available_themes:
+                description_text += f"• {theme_descriptions.get(theme, theme)}\n"
+            description_text += "\n• 🎨 Случайный дизайн - доверьте выбор нам"
 
             await update.message.reply_text(
-                "🎨 Выберите дизайн презентации:",
+                description_text,
                 reply_markup=reply_markup
             )
             return DESIGN
@@ -100,7 +165,8 @@ class PresentationBot:
             await update.message.reply_text(
                 "💡 Есть ли дополнительные пожелания к презентации?\n"
                 "(например: 'больше примеров', 'акцент на данных', 'минимум текста')\n\n"
-                "Или напишите 'нет', если дополнений нет:"
+                "Или напишите 'нет', если дополнений нет:",
+                reply_markup=ReplyKeyboardRemove()
             )
             return ADDITIONAL
 
@@ -129,8 +195,7 @@ class PresentationBot:
                     "❌ Такой темы дизайна нет. Выберите из предложенных:",
                     reply_markup=ReplyKeyboardMarkup(
                         [[theme] for theme in available_themes] + [['🎨 Случайный дизайн']],
-                        one_time_keyboard=True,
-                        resize_keyboard=True
+                        one_time_keyboard=True
                     )
                 )
                 return DESIGN
@@ -156,11 +221,17 @@ class PresentationBot:
         design_theme = context.user_data.get('design_theme', 'modern_blue')
         additional_text = context.user_data['additional']
 
+        template_names = {
+            "educational": "🎓 Образовательный",
+            "corporate": "💼 Корпоративный",
+            "creative": "🎨 Креативный"
+        }
+
         confirmation_text = (
             f"✅ Подтвердите создание презентации:\n\n"
             f"🎯 Тема: {topic}\n"
             f"📊 Слайдов: {num_slides}\n"
-            f"📝 Шаблон: {template_name}\n"
+            f"📝 Шаблон: {template_names.get(template_name, template_name)}\n"
             f"🎨 Дизайн: {design_theme}\n"
         )
 
@@ -170,7 +241,7 @@ class PresentationBot:
         confirmation_text += "\nСоздаем презентацию?"
 
         keyboard = [['✅ Да', '❌ Нет']]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
 
         await update.message.reply_text(confirmation_text, reply_markup=reply_markup)
         return CONFIRM
@@ -211,14 +282,24 @@ class PresentationBot:
                 if file_path and os.path.exists(file_path):
                     # Отправка файла пользователю
                     with open(file_path, 'rb') as file:
+                        template_emojis = {
+                            "educational": "🎓",
+                            "corporate": "💼",
+                            "creative": "🎨"
+                        }
+
+                        caption = (
+                            f"{template_emojis.get(template_name, '🎉')} Ваша презентация готова!\n"
+                            f"🎯 Тема: {topic}\n"
+                            f"📊 Слайдов: {num_slides}\n"
+                            f"📝 Тип: {template_name}\n"
+                            f"🎨 Дизайн: {design_theme}"
+                        )
+
                         await update.message.reply_document(
                             document=file,
                             filename=os.path.basename(file_path),
-                            caption=f"🎉 Ваша презентация готова!\n"
-                                    f"Тема: {topic}\n"
-                                    f"Слайдов: {num_slides}\n"
-                                    f"Дизайн: {design_theme}\n\n"
-                                    f"/generate - Сгенерировать еще"
+                            caption=caption
                         )
                     # Удаляем временный файл
                     os.remove(file_path)
@@ -257,13 +338,14 @@ class PresentationBot:
             "📚 Доступные команды:\n\n"
             "/start - Начать работу с ботом\n"
             "/generate - Создать новую презентацию\n"
+            "/templates - Показать доступные шаблоны\n"
             "/themes - Показать доступные темы дизайна\n"
             "/help - Показать эту справку\n\n"
             "🎨 Бот создает презентации с:\n"
             "• Профессиональным дизайном\n"
             "• Разными типами контента\n"
-            "• Образовательной структурой\n"
-            "• Автоматическим форматированием"
+            "• Автоматическим форматированием\n"
+            "• Выбором шаблонов под разные задачи"
         )
         await update.message.reply_text(help_text)
 
@@ -273,13 +355,56 @@ class PresentationBot:
 
         if available_themes:
             themes_text = "🎨 Доступные темы дизайна:\n\n"
+            theme_descriptions = {
+                "modern_blue": "🔵 Современный синий - профессиональный стиль",
+                "elegant_green": "🟢 Элегантный зеленый - свежий и креативный"
+            }
+
             for theme in available_themes:
-                themes_text += f"• {theme}\n"
-            themes_text += "\nИспользуйте /generate чтобы создать презентацию с выбранным дизайном!"
+                themes_text += f"• {theme} - {theme_descriptions.get(theme, 'Профессиональный дизайн')}\n"
+
+            themes_text += "\n🎲 Или выберите 'Случайный дизайн' при создании презентации!"
         else:
             themes_text = "❌ Темы дизайна не найдены. Используется стандартный дизайн."
 
         await update.message.reply_text(themes_text)
+
+    async def show_templates(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Показывает доступные шаблоны презентаций"""
+        available_templates = self.generator.get_available_templates()
+
+        if available_templates:
+            templates_text = "📝 Доступные шаблоны презентаций:\n\n"
+
+            template_descriptions = {
+                "educational": (
+                    "🎓 Образовательный шаблон\n"
+                    "• Для уроков, лекций, учебных материалов\n"
+                    "• Структура: цели → теория → примеры → задания → выводы\n"
+                    "• Идеально для учителей и студентов"
+                ),
+                "corporate": (
+                    "💼 Корпоративный шаблон\n"
+                    "• Для бизнес-презентаций, отчетов, проектов\n"
+                    "• Структура: повестка → проблема → решение → метрики → план\n"
+                    "• Подходит для встреч с инвесторами и руководством"
+                ),
+                "creative": (
+                    "🎨 Креативный шаблон\n"
+                    "• Для вдохновляющих выступлений, стартапов\n"
+                    "• Структура: история → идея → факты → призыв к действию\n"
+                    "• Идеально для TED-формата и мотивационных выступлений"
+                )
+            }
+
+            for template in available_templates:
+                templates_text += f"{template_descriptions.get(template, template)}\n\n"
+
+            templates_text += "Используйте /generate чтобы создать презентацию!"
+        else:
+            templates_text = "❌ Шаблоны не найдены."
+
+        await update.message.reply_text(templates_text)
 
 
 def main():
@@ -293,6 +418,7 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('generate', bot.generate)],
         states={
+            TEMPLATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.process_template)],
             TOPIC: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_topic)],
             SLIDES: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_slides)],
             DESIGN: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.get_design)],
@@ -302,9 +428,11 @@ def main():
         fallbacks=[CommandHandler('cancel', bot.cancel)]
     )
 
+    # Регистрируем обработчики команд
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("help", bot.help_command))
     application.add_handler(CommandHandler("themes", bot.show_themes))
+    application.add_handler(CommandHandler("templates", bot.show_templates))
     application.add_handler(conv_handler)
 
     # Запуск бота
