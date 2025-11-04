@@ -59,88 +59,265 @@ class PresentationGenerator:
                         logger.error(f"Ошибка загрузки шаблона {file}: {e}")
         return templates
 
-    def _create_default_template(self):
-        """Создает дефолтный образовательный шаблон"""
-        default_template = {
-            "name": "educational",
-            "description": "Образовательный шаблон с разными типами контента",
-            "default_design_theme": "modern_blue",
-            "slides_structure": [
-                {
-                    "slide_number": 1,
-                    "slide_type": "title",
-                    "content_type": "title_only",
-                    "slide_title": "Название темы",
-                    "content": [],
-                    "instructions": "Создай заголовок презентации на указанную тему"
-                },
-                {
-                    "slide_number": 2,
-                    "slide_type": "objectives",
-                    "content_type": "bullet_points",
-                    "slide_title": "Цели презентации",
-                    "content": [],
-                    "instructions": "Опиши 3-4 основные цели этой презентации в виде пунктов"
-                },
-                {
-                    "slide_number": 3,
-                    "slide_type": "introduction",
-                    "content_type": "paragraph",
-                    "slide_title": "Введение и теоретические определения",
-                    "content": [],
-                    "instructions": "Напиши связный текст на 150-200 слов с введением в тему"
-                },
-                {
-                    "slide_number": 4,
-                    "slide_type": "main_content",
-                    "content_type": "two_columns",
-                    "slide_title": "Основная часть",
-                    "content": [],
-                    "instructions": "Представь информацию в двух колонках: теория слева, примеры справа"
-                },
-                {
-                    "slide_number": 5,
-                    "slide_type": "examples",
-                    "content_type": "bullet_points",
-                    "slide_title": "Примеры и практическое применение",
-                    "content": [],
-                    "instructions": "Приведи 3-4 конкретных примера в виде пунктов"
-                },
-                {
-                    "slide_number": 6,
-                    "slide_type": "exercises",
-                    "content_type": "numbered_list",
-                    "slide_title": "Задания для самостоятельного решения",
-                    "content": [],
-                    "instructions": "Создай 3-4 задания с нумерацией для самостоятельной работы"
-                },
-                {
-                    "slide_number": 7,
-                    "slide_type": "conclusion",
-                    "content_type": "paragraph",
-                    "slide_title": "Заключение и выводы",
-                    "content": [],
-                    "instructions": "Напиши заключительный текст на 120-180 слов с выводами"
-                },
-                {
-                    "slide_number": 8,
-                    "slide_type": "homework",
-                    "content_type": "bullet_points",
-                    "slide_title": "Домашнее задание",
-                    "content": [],
-                    "instructions": "Предложи 3-4 пункта домашнего задания"
-                }
-            ]
+    def _create_default_templates(self):
+        """Создает все дефолтные шаблоны"""
+        templates = {
+            "educational": {
+                "name": "educational",
+                "description": "Образовательный шаблон с разными типами контента",
+                "default_design_theme": "modern_blue",
+                "slides_structure": [
+                    {
+                        "slide_number": 1,
+                        "slide_type": "title",
+                        "content_type": "title_only",
+                        "slide_title": "Название темы",
+                        "content": [],
+                        "instructions": "Создай заголовок презентации на указанную тему"
+                    },
+                    {
+                        "slide_number": 2,
+                        "slide_type": "objectives",
+                        "content_type": "bullet_points",
+                        "slide_title": "Цели презентации",
+                        "content": [],
+                        "instructions": "Опиши 3-4 основные цели этой презентации в виде пунктов"
+                    },
+                    {
+                        "slide_number": 3,
+                        "slide_type": "introduction",
+                        "content_type": "paragraph",
+                        "slide_title": "Введение и теоретические определения",
+                        "content": [],
+                        "instructions": "Напиши связный текст на 150-200 слов с введением в тему"
+                    },
+                    {
+                        "slide_number": 4,
+                        "slide_type": "main_content",
+                        "content_type": "two_columns",
+                        "slide_title": "Основная часть",
+                        "content": [],
+                        "instructions": "Представь информацию в двух колонках: теория слева, примеры справа"
+                    },
+                    {
+                        "slide_number": 5,
+                        "slide_type": "examples",
+                        "content_type": "bullet_points",
+                        "slide_title": "Примеры и практическое применение",
+                        "content": [],
+                        "instructions": "Приведи 3-4 конкретных примера в виде пунктов"
+                    },
+                    {
+                        "slide_number": 6,
+                        "slide_type": "exercises",
+                        "content_type": "numbered_list",
+                        "slide_title": "Задания для самостоятельного решения",
+                        "content": [],
+                        "instructions": "Создай 3-4 задания с нумерацией для самостоятельной работы"
+                    },
+                    {
+                        "slide_number": 7,
+                        "slide_type": "conclusion",
+                        "content_type": "paragraph",
+                        "slide_title": "Заключение и выводы",
+                        "content": [],
+                        "instructions": "Напиши заключительный текст на 120-180 слов с выводами"
+                    },
+                    {
+                        "slide_number": 8,
+                        "slide_type": "homework",
+                        "content_type": "bullet_points",
+                        "slide_title": "Домашнее задание",
+                        "content": [],
+                        "instructions": "Предложи 3-4 пункта домашнего задания"
+                    }
+                ]
+            },
+            "corporate": {
+                "name": "corporate",
+                "description": "Корпоративный шаблон для бизнес-презентаций",
+                "default_design_theme": "modern_blue",
+                "slides_structure": [
+                    {
+                        "slide_number": 1,
+                        "slide_type": "title",
+                        "content_type": "title_only",
+                        "slide_title": "Название проекта/презентации",
+                        "content": [],
+                        "instructions": "Создай профессиональный заголовок для бизнес-презентации"
+                    },
+                    {
+                        "slide_number": 2,
+                        "slide_type": "agenda",
+                        "content_type": "bullet_points",
+                        "slide_title": "Повестка встречи",
+                        "content": [],
+                        "instructions": "Создай 4-5 пунктов повестки встречи в деловом стиле"
+                    },
+                    {
+                        "slide_number": 3,
+                        "slide_type": "executive_summary",
+                        "content_type": "paragraph",
+                        "slide_title": "Краткий обзор",
+                        "content": [],
+                        "instructions": "Напиши краткий обзор на 150-200 слов в деловом стиле"
+                    },
+                    {
+                        "slide_number": 4,
+                        "slide_type": "problem_statement",
+                        "content_type": "bullet_points",
+                        "slide_title": "Постановка проблемы",
+                        "content": [],
+                        "instructions": "Опиши 3-4 ключевые проблемы или вызовы"
+                    },
+                    {
+                        "slide_number": 5,
+                        "slide_type": "solution",
+                        "content_type": "two_columns",
+                        "slide_title": "Предлагаемое решение",
+                        "content": [],
+                        "instructions": "Опиши решение: левая колонка - подход, правая - преимущества"
+                    },
+                    {
+                        "slide_number": 6,
+                        "slide_type": "metrics",
+                        "content_type": "bullet_points",
+                        "slide_title": "Ключевые метрики",
+                        "content": [],
+                        "instructions": "Представь 4-5 измеримых показателей успеха"
+                    },
+                    {
+                        "slide_number": 7,
+                        "slide_type": "timeline",
+                        "content_type": "numbered_list",
+                        "slide_title": "План реализации",
+                        "content": [],
+                        "instructions": "Создай нумерованный план из 4-5 этапов с сроками"
+                    },
+                    {
+                        "slide_number": 8,
+                        "slide_type": "team",
+                        "content_type": "bullet_points",
+                        "slide_title": "Команда проекта",
+                        "content": [],
+                        "instructions": "Опиши ключевых участников команды и их роли"
+                    },
+                    {
+                        "slide_number": 9,
+                        "slide_type": "budget",
+                        "content_type": "bullet_points",
+                        "slide_title": "Бюджет и ресурсы",
+                        "content": [],
+                        "instructions": "Опиши основные статьи бюджета и необходимые ресурсы"
+                    },
+                    {
+                        "slide_number": 10,
+                        "slide_type": "next_steps",
+                        "content_type": "numbered_list",
+                        "slide_title": "Следующие шаги",
+                        "content": [],
+                        "instructions": "Определи 3-4 конкретных следующих шага с ответственными"
+                    }
+                ]
+            },
+            "creative": {
+                "name": "creative",
+                "description": "Креативный шаблон для презентаций и выступлений",
+                "default_design_theme": "elegant_green",
+                "slides_structure": [
+                    {
+                        "slide_number": 1,
+                        "slide_type": "title",
+                        "content_type": "title_only",
+                        "slide_title": "Захватывающий заголовок",
+                        "content": [],
+                        "instructions": "Создай креативный и запоминающийся заголовок"
+                    },
+                    {
+                        "slide_number": 2,
+                        "slide_type": "hook",
+                        "content_type": "paragraph",
+                        "slide_title": "История, которая зацепит",
+                        "content": [],
+                        "instructions": "Напиши короткую историю или пример, который привлечет внимание аудитории"
+                    },
+                    {
+                        "slide_number": 3,
+                        "slide_type": "big_idea",
+                        "content_type": "paragraph",
+                        "slide_title": "Основная идея",
+                        "content": [],
+                        "instructions": "Сформулируй основную идею презентации вдохновляющим языком"
+                    },
+                    {
+                        "slide_number": 4,
+                        "slide_type": "why_matters",
+                        "content_type": "bullet_points",
+                        "slide_title": "Почему это важно?",
+                        "content": [],
+                        "instructions": "Объясни 3-4 причины, почему эта тема важна для аудитории"
+                    },
+                    {
+                        "slide_number": 5,
+                        "slide_type": "surprising_facts",
+                        "content_type": "bullet_points",
+                        "slide_title": "Неожиданные факты",
+                        "content": [],
+                        "instructions": "Представь 3-4 удивительных или неожиданных факта по теме"
+                    },
+                    {
+                        "slide_number": 6,
+                        "slide_type": "visual_story",
+                        "content_type": "paragraph",
+                        "slide_title": "Визуальная история",
+                        "content": [],
+                        "instructions": "Опиши визуальный пример или кейс, который иллюстрирует тему"
+                    },
+                    {
+                        "slide_number": 7,
+                        "slide_type": "how_it_works",
+                        "content_type": "two_columns",
+                        "slide_title": "Как это работает?",
+                        "content": [],
+                        "instructions": "Объясни механизм работы: левая колонка - принципы, правая - примеры"
+                    },
+                    {
+                        "slide_number": 8,
+                        "slide_type": "success_stories",
+                        "content_type": "bullet_points",
+                        "slide_title": "Истории успеха",
+                        "content": [],
+                        "instructions": "Расскажи 3-4 вдохновляющие истории успеха или кейсы"
+                    },
+                    {
+                        "slide_number": 9,
+                        "slide_type": "call_to_action",
+                        "content_type": "numbered_list",
+                        "slide_title": "Призыв к действию",
+                        "content": [],
+                        "instructions": "Создай 3-4 конкретных шага, которые аудитория может сделать прямо сейчас"
+                    },
+                    {
+                        "slide_number": 10,
+                        "slide_type": "takeaways",
+                        "content_type": "bullet_points",
+                        "slide_title": "Ключевые выводы",
+                        "content": [],
+                        "instructions": "Сформулируй 3-4 главных вывода из презентации"
+                    }
+                ]
+            }
         }
 
-        try:
-            template_path = os.path.join(self.templates_dir, "educational.json")
-            with open(template_path, 'w', encoding='utf-8') as f:
-                json.dump(default_template, f, ensure_ascii=False, indent=2)
-            self.available_templates["educational"] = default_template
-            logger.info("Создан дефолтный шаблон educational")
-        except Exception as e:
-            logger.error(f"Ошибка создания дефолтного шаблона: {e}")
+        for template_name, template_data in templates.items():
+            try:
+                template_path = os.path.join(self.templates_dir, f"{template_name}.json")
+                with open(template_path, 'w', encoding='utf-8') as f:
+                    json.dump(template_data, f, ensure_ascii=False, indent=2)
+                self.available_templates[template_name] = template_data
+                logger.info(f"Создан шаблон: {template_name}")
+            except Exception as e:
+                logger.error(f"Ошибка создания шаблона {template_name}: {e}")
 
     def _create_default_themes(self):
         """Создает дефолтные темы оформления"""
